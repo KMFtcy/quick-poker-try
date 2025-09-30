@@ -2,31 +2,12 @@
 // MVP focus: create/join game, get state, bet/call/fold, advance streets, settle
 
 const { v4: uuidv4 } = require('uuid');
-
-// Game phases
-const GamePhase = {
-    WAITING: 'WAITING',
-    PREFLOP: 'PREFLOP',
-    FLOP: 'FLOP',
-    TURN: 'TURN',
-    RIVER: 'RIVER',
-    SHOWDOWN: 'SHOWDOWN'
-};
-
-// Player status
-const PlayerStatus = {
-    ACTIVE: 'ACTIVE', // seated and able to act
-    FOLDED: 'FOLDED',
-    OUT: 'OUT', // left table or busted
-    PENDING: 'PENDING' // requested to join
-};
+const { GamePhase, Game } = require('../../model/game');
+const { Player, PlayerStatus } = require('../../model/player');
+const { SUITS, RANKS } = require('../../model/deck');
 
 // In-memory store of all games
 const games = new Map();
-
-// Simple 52-card deck utilities
-const SUITS = ['S', 'H', 'D', 'C'];
-const RANKS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
 
 function generateShuffledDeck() {
     const deck = [];
@@ -41,22 +22,8 @@ function generateShuffledDeck() {
 }
 
 function createGame() {
-    // const id = uuidv4(); // TODO: use uuidv4
-    const id = '1234567890';
-    const game = {
-        id,
-        players: [], // { id, chips, status, holeCards: [c1,c2] | [], currentBet }
-        buttonIndex: 0,
-        smallBlind: 10,
-        bigBlind: 20,
-        pot: 0,
-        communityCards: [],
-        phase: GamePhase.WAITING,
-        deck: [],
-        actingIndex: null, // index in players array
-        minRaise: 20,
-        lastAggressorIndex: null
-    };
+    const id = uuidv4();
+    const game = new Game(id);
     games.set(id, game);
     return game;
 }
@@ -68,7 +35,6 @@ function getGame(gameId) {
 function getUserPrivateInfo(gameId, userId) {
     const game = getGame(gameId);
     if (!game) throw new Error('GAME_NOT_FOUND');
-    // return the player info for the given userId
     return game.players.find(p => p.id === userId) || null;
 }
 
@@ -77,13 +43,8 @@ function joinGame(gameId, userId, buyInChips = 1000) {
     if (!game) throw new Error('GAME_NOT_FOUND');
     if (game.players.find(p => p.id === userId)) return game; // already seated
     if (game.players.length >= 9) throw new Error('TABLE_FULL');
-    game.players.push({
-        id: userId,
-        chips: buyInChips,
-        status: PlayerStatus.ACTIVE,
-        holeCards: [],
-        currentBet: 0
-    });
+    const player = new Player(userId, buyInChips);
+    game.players.push(player);
     if (game.phase === GamePhase.WAITING && game.players.length >= 2) {
         startHand(game);
     }

@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var gameModel = require('../game/game');
+var gameModel = require('../service/game');
 
 router.get('/', function(req, res, next) {
     res.json({ ok: true, message: 'game route alive' });
