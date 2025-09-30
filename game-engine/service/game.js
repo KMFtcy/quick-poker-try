@@ -2,9 +2,9 @@
 // MVP focus: create/join game, get state, bet/call/fold, advance streets, settle
 
 const { v4: uuidv4 } = require('uuid');
-const { GamePhase, Game } = require('../../model/game');
-const { Player, PlayerStatus } = require('../../model/player');
-const { SUITS, RANKS } = require('../../model/deck');
+const { GamePhase, Game } = require('../model/game');
+const { Player, PlayerStatus } = require('../model/player');
+const { SUITS, RANKS } = require('../model/deck');
 
 // In-memory store of all games
 const games = new Map();
