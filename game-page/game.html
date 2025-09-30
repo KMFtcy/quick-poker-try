@@ -6,7 +6,65 @@
   }
 </script>
 
-<div id="app">{{ message }}</div>
+<link rel="stylesheet" href="game.css" />
+
+<div id="app">
+  <div class="table" aria-label="Texas Hold'em Table">
+    <div class="felt">
+      <div class="community" aria-label="Community Cards">
+        <div class="card-slot"></div>
+        <div class="card-slot"></div>
+        <div class="card-slot"></div>
+        <div class="card-slot"></div>
+        <div class="card-slot"></div>
+      </div>
+
+      <div class="pot" aria-label="Pot">POT: 0</div>
+
+      <div class="seat-ring" aria-label="Seats">
+        <div class="seat" style="--angle: 0deg; --seat-distance: 200px">
+          <span class="label">1</span>
+        </div>
+        <div class="seat" style="--angle: 40deg; --seat-distance: 250px">
+          <span class="label">2</span>
+        </div>
+        <div class="seat" style="--angle: 80deg; --seat-distance: 400px">
+          <span class="label">3</span>
+        </div>
+        <div class="seat" style="--angle: 120deg; --seat-distance: 300px">
+          <span class="label">4</span>
+        </div>
+        <div class="seat" style="--angle: 160deg; --seat-distance: 200px">
+          <span class="label">5</span>
+        </div>
+        <div class="seat" style="--angle: 200deg; --seat-distance: 200px">
+          <span class="label">6</span>
+        </div>
+        <div class="seat" style="--angle: 240deg; --seat-distance: 300px">
+          <span class="label">7</span>
+        </div>
+        <div class="seat" style="--angle: 280deg; --seat-distance: 400px">
+          <span class="label">8</span>
+        </div>
+        <div class="seat" style="--angle: 320deg; --seat-distance: 250px">
+          <span class="label">9</span>
+        </div>
+      </div>
+
+      <div class="dealer-btn" title="Dealer">D</div>
+    </div>
+  </div>
+  <div
+    style="
+      text-align: center;
+      margin-top: 12px;
+      color: #9fd3b0;
+      font-size: 12px;
+    "
+  >
+    基准桌面：9人桌、公共牌5位、底池与庄家按钮
+  </div>
+</div>
 
 <script type="module">
   import { createApp } from "vue";
@@ -14,7 +72,7 @@
   createApp({
     data() {
       return {
-        message: "Hello Vue!",
+        // 预留：后续可以把座位、筹码、位置、按钮等接入数据
       };
     },
   }).mount("#app");
