@@ -12,11 +12,9 @@
   <div class="table" aria-label="Texas Hold'em Table">
     <div class="felt">
       <div class="community" aria-label="Community Cards">
-        <div class="card-slot"></div>
-        <div class="card-slot"></div>
-        <div class="card-slot"></div>
-        <div class="card-slot"></div>
-        <div class="card-slot"></div>
+        <div class="card-slot" v-for="(card, idx) in communitySlots" :key="idx">
+          <img v-if="card" :src="cardImageUrl(card)" :alt="card" />
+        </div>
       </div>
 
       <div class="pot" aria-label="Pot">POT: 0</div>
@@ -72,8 +70,27 @@
   createApp({
     data() {
       return {
-        // 预留：后续可以把座位、筹码、位置、按钮等接入数据
+        communityCards: [],
       };
+    },
+    mounted() {
+      // 皇家同花顺（黑桃 10, J, Q, K, A）
+      const royalSpades = ["0S", "JS", "QS", "KS", "AS"]; // Deck of Cards API codes
+      this.communityCards = royalSpades;
+    },
+    methods: {
+      cardImageUrl(code) {
+        return `https://deckofcardsapi.com/static/img/${code}.png`;
+      },
+    },
+    computed: {
+      communitySlots() {
+        const slots = new Array(5).fill(null);
+        for (let i = 0; i < Math.min(5, this.communityCards.length); i += 1) {
+          slots[i] = this.communityCards[i];
+        }
+        return slots;
+      },
     },
   }).mount("#app");
 </script>
