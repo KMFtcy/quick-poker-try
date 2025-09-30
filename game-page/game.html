@@ -65,6 +65,27 @@
           <img v-if="card" :src="cardImageUrl(card)" :alt="card" />
         </div>
       </div>
+      <!-- Other seats: show card backs -->
+      <div
+        class="hole-cards"
+        v-for="(angle, i) in otherSeatsAngles"
+        :key="`back-` + i"
+        :style="`--angle: ${angle}deg; --hole-distance: ${otherSeatsDistances[i]}px`"
+        aria-label="Other Seat Hole Cards"
+      >
+        <div class="card-slot small">
+          <img
+            src="https://deckofcardsapi.com/static/img/back.png"
+            alt="Card back"
+          />
+        </div>
+        <div class="card-slot small">
+          <img
+            src="https://deckofcardsapi.com/static/img/back.png"
+            alt="Card back"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -77,6 +98,8 @@
       return {
         communityCards: [],
         player1Cards: [],
+        otherSeatsAngles: [55, 80, 120, 150, 210, 240, 280, 305],
+        otherSeatsDistances: [420, 570, 550, 420, 420, 520, 560, 440],
       };
     },
     mounted() {
