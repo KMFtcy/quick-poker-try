@@ -1,24 +1,18 @@
 {
   "name": "quick-poker-try",
-  "version": "1.0.0",
-  "description": "A simple Texas Poker game. Develop it for nodejs learning.",
-  "main": "index.js",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/KMFtcy/quick-poker-try.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/KMFtcy/quick-poker-try/issues"
-  },
-  "homepage": "https://github.com/KMFtcy/quick-poker-try#readme",
   "dependencies": {
-    "express": "^5.1.0",
-    "uuid": "^13.0.0",
-    "undici": "^6.19.8"
+    "vue": "^3.5.21"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "vite": "^7.1.7"
   }
 }
