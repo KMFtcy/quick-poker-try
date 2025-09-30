@@ -23,44 +23,49 @@
         <div class="seat" style="--angle: 0deg; --seat-distance: 200px">
           <span class="label">1</span>
         </div>
-        <div class="seat" style="--angle: 40deg; --seat-distance: 250px">
+        <div class="seat" style="--angle: 55deg; --seat-distance: 300px">
           <span class="label">2</span>
         </div>
         <div class="seat" style="--angle: 80deg; --seat-distance: 400px">
           <span class="label">3</span>
         </div>
-        <div class="seat" style="--angle: 120deg; --seat-distance: 300px">
+        <div class="seat" style="--angle: 110deg; --seat-distance: 370px">
           <span class="label">4</span>
         </div>
-        <div class="seat" style="--angle: 160deg; --seat-distance: 200px">
+        <div class="seat" style="--angle: 140deg; --seat-distance: 230px">
           <span class="label">5</span>
         </div>
-        <div class="seat" style="--angle: 200deg; --seat-distance: 200px">
+        <div class="seat" style="--angle: 220deg; --seat-distance: 230px">
           <span class="label">6</span>
         </div>
-        <div class="seat" style="--angle: 240deg; --seat-distance: 300px">
+        <div class="seat" style="--angle: 250deg; --seat-distance: 370px">
           <span class="label">7</span>
         </div>
         <div class="seat" style="--angle: 280deg; --seat-distance: 400px">
           <span class="label">8</span>
         </div>
-        <div class="seat" style="--angle: 320deg; --seat-distance: 250px">
+        <div class="seat" style="--angle: 305deg; --seat-distance: 300px">
           <span class="label">9</span>
         </div>
       </div>
 
-      <div class="dealer-btn" title="Dealer">D</div>
+      <!-- <div class="dealer-btn" title="Dealer">D</div> -->
+
+      <!-- Player 1 hole cards in front of seat 1 -->
+      <div
+        class="hole-cards"
+        style="--angle: 0deg; --hole-distance: 280px"
+        aria-label="Seat 1 Hole Cards"
+      >
+        <div
+          class="card-slot small"
+          v-for="(card, idx) in player1Slots"
+          :key="idx"
+        >
+          <img v-if="card" :src="cardImageUrl(card)" :alt="card" />
+        </div>
+      </div>
     </div>
-  </div>
-  <div
-    style="
-      text-align: center;
-      margin-top: 12px;
-      color: #9fd3b0;
-      font-size: 12px;
-    "
-  >
-    基准桌面：9人桌、公共牌5位、底池与庄家按钮
   </div>
 </div>
 
@@ -71,12 +76,15 @@
     data() {
       return {
         communityCards: [],
+        player1Cards: [],
       };
     },
     mounted() {
       // 皇家同花顺（黑桃 10, J, Q, K, A）
       const royalSpades = ["0S", "JS", "QS", "KS", "AS"]; // Deck of Cards API codes
       this.communityCards = royalSpades;
+      // 示例：玩家1两张黑桃手牌（可替换）
+      this.player1Cards = ["AS", "KS"]; // A♠, K♠
     },
     methods: {
       cardImageUrl(code) {
@@ -88,6 +96,13 @@
         const slots = new Array(5).fill(null);
         for (let i = 0; i < Math.min(5, this.communityCards.length); i += 1) {
           slots[i] = this.communityCards[i];
+        }
+        return slots;
+      },
+      player1Slots() {
+        const slots = new Array(2).fill(null);
+        for (let i = 0; i < Math.min(2, this.player1Cards.length); i += 1) {
+          slots[i] = this.player1Cards[i];
         }
         return slots;
       },
