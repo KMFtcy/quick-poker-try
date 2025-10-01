@@ -19,7 +19,7 @@ router.post('/create/:userId', function(req, res, next) {
 router.post('/join/:gameId/:userId', function(req, res, next) {
     try {
         var game = gameModel.joinGame(req.params.gameId, req.params.userId);
-        res.json({ ok: true, state: gameModel.publicState(game) });
+        res.json({ ok: true,gameId: game.id, state: gameModel.publicState(game) });
     } catch (e) {
         res.status(400).json({ ok: false, error: String(e.message || e) });
     }
