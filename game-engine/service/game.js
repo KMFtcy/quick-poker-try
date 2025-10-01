@@ -238,6 +238,17 @@ function call(gameId, userId) {
     return game;
 }
 
+function check(gameId, userId) {
+    const game = getGame(gameId);
+    if (!game) throw new Error('GAME_NOT_FOUND');
+    if ([GamePhase.WAITING, GamePhase.SHOWDOWN].includes(game.phase)) throw new Error('CHECK_NOT_ALLOWED');
+    const { player } = ensureTurn(game, userId);
+    const toCall = Math.max(0, currentMaxBet(game) - player.currentBet);
+    if (toCall > 0) throw new Error('CHECK_NOT_ALLOWED');
+    passAction(game);
+    return game;
+}
+
 function fold(gameId, userId) {
     const game = getGame(gameId);
     if (!game) throw new Error('GAME_NOT_FOUND');
@@ -329,6 +340,7 @@ module.exports = {
     joinGame,
     bet,
     call,
+    check,
     fold,
     publicState
 };
