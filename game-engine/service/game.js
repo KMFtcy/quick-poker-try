@@ -89,8 +89,8 @@ function generateShuffledDeck() {
 }
 
 function createGame() {
-    // const id = uuidv4();
-    const id = "1234567890";
+    const id = uuidv4();
+    // const id = "1234567890"; // for testing
     const game = new Game(id);
     games.set(id, game);
     return game;
