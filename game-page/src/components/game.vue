@@ -14,6 +14,22 @@
 
         <div class="pot" aria-label="Pot">POT: 0</div>
 
+        <!-- Betting area -->
+        <div class="betting-area" aria-label="Betting Controls">
+          <div class="bet-input-group">
+            <input
+              v-model.number="betAmount"
+              type="number"
+              :min="0"
+              :max="you.chips"
+              placeholder="Bet Amount"
+              class="bet-input"
+              @keyup.enter="placeBet"
+            />
+            <button @click="placeBet" class="bet-button">BET</button>
+          </div>
+        </div>
+
         <div class="seat-ring" aria-label="Seats">
           <div
             class="seat"
@@ -21,13 +37,21 @@
             :key="index"
             :style="`--angle: ${seat.angle}deg; --seat-distance: ${seat.distance}px`"
           >
-            <span class="label">{{ index + 1 }}</span>
+            <span class="label">
+              <template v-if="index === 0">
+                {{ you.chips }}
+              </template>
+              <template v-else-if="hasPlayerInSeat(index)">
+                {{ getPlayerInSeat(index)?.chips }}
+              </template>
+              <template v-else> </template>
+            </span>
           </div>
         </div>
 
         <!-- <div class="dealer-btn" title="Dealer">D</div> -->
 
-        <!-- Player 1 hole cards in front of seat 1 -->
+        <!-- Player hole cards in front of seat 1 -->
         <div
           class="hole-cards"
           style="--angle: 0deg; --hole-distance: 280px"
@@ -35,7 +59,7 @@
         >
           <div
             class="card-slot small"
-            v-for="(card, idx) in player1Slots"
+            v-for="(card, idx) in you.holeCards"
             :key="idx"
           >
             <img v-if="card" :src="cardImageUrl(card)" :alt="card" />
@@ -51,14 +75,14 @@
         >
           <div class="card-slot small">
             <img
-              v-if="hasPlayerInSeat(index)"
+              v-if="hasPlayerInSeat(index + 1)"
               src="https://deckofcardsapi.com/static/img/back.png"
               alt="Card back"
             />
           </div>
           <div class="card-slot small">
             <img
-              v-if="hasPlayerInSeat(index)"
+              v-if="hasPlayerInSeat(index + 1)"
               src="https://deckofcardsapi.com/static/img/back.png"
               alt="Card back"
             />
@@ -73,15 +97,14 @@
 import { onMounted, ref, computed } from "vue";
 
 class Player {
-  constructor(id, chips) {
+  constructor(id, chips, holeCards) {
     this.id = id;
     this.chips = typeof chips === "number" ? chips : 1000;
-    this.holeCards = [];
+    this.holeCards = holeCards;
     this.currentBet = 0;
   }
 }
 const communityCards = ref([]);
-const player1Cards = ref([]);
 
 // Seat configuration array - all seats with their angles and distances
 const seatConfigs = ref([
@@ -108,8 +131,13 @@ const cardSlotsConfigs = ref([
   { angle: 305, distance: 440 },
 ]);
 
+var you = new Player(1, 1000, ["5S", "6S"]);
+
 var opponentsPlayers = ref({
   2: {
+    player: new Player(2, 1000),
+  },
+  5: {
     player: new Player(2, 1000),
   },
 });
@@ -118,8 +146,6 @@ onMounted(() => {
   // 皇家同花顺（黑桃 10, J, Q, K, A）
   const royalSpades = ["0S", "JS", "QS", "KS", "AS"];
   communityCards.value = royalSpades;
-  // 示例：玩家1两张黑桃手牌（可替换）
-  player1Cards.value = ["AS", "KS"];
 });
 
 function cardImageUrl(code) {
@@ -127,22 +153,21 @@ function cardImageUrl(code) {
 }
 
 function hasPlayerInSeat(seatIndex) {
-  // seatIndex + 2 because seat 1 is handled separately, seats start from 2
-  return opponentsPlayers.value.hasOwnProperty(seatIndex + 2);
+  // seatIndex + 1 because seat numbers start from 1, but array index starts from 0
+  const seatNumber = seatIndex + 1;
+  return opponentsPlayers.value.hasOwnProperty(seatNumber);
+}
+
+function getPlayerInSeat(seatIndex) {
+  // Get player in seat (seat numbers start from 1)
+  const seatNumber = seatIndex + 1;
+  return opponentsPlayers.value[seatNumber]?.player;
 }
 
 const communitySlots = computed(() => {
   const slots = new Array(5).fill(null);
   for (let i = 0; i < Math.min(5, communityCards.value.length); i += 1) {
     slots[i] = communityCards.value[i];
-  }
-  return slots;
-});
-
-const player1Slots = computed(() => {
-  const slots = new Array(2).fill(null);
-  for (let i = 0; i < Math.min(2, player1Cards.value.length); i += 1) {
-    slots[i] = player1Cards.value[i];
   }
   return slots;
 });
@@ -317,6 +342,79 @@ body {
   height: clamp(90px, 7.8vw, 144px);
 }
 
+/* Betting area */
+.betting-area {
+  position: absolute;
+  left: 50%;
+  top: 77%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 4;
+}
+
+.bet-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.bet-input {
+  width: 120px;
+  padding: 8px 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text);
+  font-size: 14px;
+  text-align: center;
+}
+
+.bet-input:focus {
+  outline: none;
+  border-color: var(--dealer);
+  box-shadow: 0 0 0 2px rgba(255, 216, 77, 0.3);
+}
+
+.bet-button {
+  padding: 8px 16px;
+  background: var(--dealer);
+  color: #222;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bet-button:hover:not(:disabled) {
+  background: #ffed4e;
+  transform: translateY(-1px);
+}
+
+.bet-button:disabled {
+  background: #666;
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.bet-info {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bet-info span {
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
 /* Small screens */
 @media (max-width: 520px) {
   :root {
@@ -324,6 +422,21 @@ body {
   }
   .pot {
     font-size: 12px;
+  }
+
+  .bet-input {
+    width: 100px;
+    font-size: 12px;
+  }
+
+  .bet-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .bet-info {
+    font-size: 11px;
+    gap: 8px;
   }
 }
 </style>
