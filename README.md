@@ -2,18 +2,18 @@
 
 A simple Texas Poker game. Develop it for nodejs learning.
 
-## Game page
-
-For simplicity, I develop a pure HTML/CSS/JS game front page.
-
-To open the front page, you can use any HTTP server to provide access to the game for players. A simple example is start a http server under root by using node module with following command:
+The game page is a vite project and you can simpliy run it with:
 
 ```
-npx http-server ./game-page -p 8000
+npm run dev
 ```
 
-Then, open the page in the browser:
+under `game-page` folder.
+
+The game-engine is a nodejs project and run
 
 ```
-http://127.0.0.1:8000/game.html
+node app.js
 ```
+
+under `game-engine` folder to start it.
