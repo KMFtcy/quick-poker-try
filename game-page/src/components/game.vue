@@ -88,6 +88,7 @@
             v-for="(seat, index) in seatConfigs"
             :key="index"
             :style="`--angle: ${seat.angle}deg; --seat-distance: ${seat.distance}px`"
+            :class="{ acting: actingSeat === index + 1 }"
           >
             <span class="label">
               <template v-if="playersBySeat[index + 1]">
@@ -168,6 +169,7 @@ import {
 const communityCards = ref([]);
 const pot = ref(0);
 const playersBySeat = ref({});
+const actingSeat = ref(null);
 
 // Simple ID storage
 const userId = ref(null);
@@ -390,6 +392,9 @@ async function loadGameState() {
           you.value = { ...you.value, ...player };
         }
       }
+
+      // Update acting seat
+      actingSeat.value = gameState.actingSeat ?? null;
 
       return true; // Success
     } else {
@@ -769,6 +774,28 @@ body {
   font-size: 12px;
   letter-spacing: 0.3px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.seat.acting {
+  border-color: #ffd84d;
+  box-shadow: 0 0 0 3px rgba(255, 216, 77, 0.35),
+    0 0 14px 6px rgba(255, 216, 77, 0.25), 0 4px 10px rgba(0, 0, 0, 0.35);
+  animation: actingPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes actingPulse {
+  0% {
+    box-shadow: 0 0 0 2px rgba(255, 216, 77, 0.2),
+      0 0 10px 4px rgba(255, 216, 77, 0.2), 0 4px 10px rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(255, 216, 77, 0.45),
+      0 0 18px 8px rgba(255, 216, 77, 0.35), 0 6px 12px rgba(0, 0, 0, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(255, 216, 77, 0.2),
+      0 0 10px 4px rgba(255, 216, 77, 0.2), 0 4px 10px rgba(0, 0, 0, 0.35);
+  }
 }
 
 .seat .label {
