@@ -51,3 +51,11 @@ export async function fold(gameId, userId) {
   });
   return response.json();
 }
+
+//check
+export async function check(gameId, userId) {
+  const response = await fetch(`${API_BASE}/game/${gameId}/check/${userId}`, {
+    method: 'POST'
+  });
+  return response.json();
+}

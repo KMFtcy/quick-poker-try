@@ -82,6 +82,9 @@
             <button @click="call" class="action-button call-button">
               CALL
             </button>
+            <button @click="check" class="action-button check-button">
+              CHECK
+            </button>
             <button @click="fold" class="action-button fold-button">
               FOLD
             </button>
@@ -172,6 +175,7 @@ import {
   bet as betApi,
   call as callApi,
   fold as foldApi,
+  check as checkApi,
   joinGame as joinGameApi,
 } from "../api/api.js";
 
@@ -498,6 +502,28 @@ async function call() {
     }
   } catch (err) {
     console.error("Call error:", err);
+  }
+}
+
+async function check() {
+  try {
+    const currentGameId = gameId.value;
+    const currentUserId = userId.value;
+
+    if (!currentGameId || !currentUserId) {
+      console.error("Missing gameId or userId");
+      return;
+    }
+
+    const response = await checkApi(currentGameId, currentUserId);
+    if (response?.ok) {
+      await loadGameState();
+      await loadUserState();
+    } else {
+      console.error("Check failed:", response);
+    }
+  } catch (err) {
+    console.error("Check error:", err);
   }
 }
 
@@ -979,6 +1005,24 @@ body {
 }
 
 .call-button:disabled {
+  background: #666;
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Check button */
+.check-button {
+  background: #9e9e9e;
+  color: #222;
+}
+
+.check-button:hover:not(:disabled) {
+  background: #8a8a8a;
+  transform: translateY(-1px);
+}
+
+.check-button:disabled {
   background: #666;
   color: #999;
   cursor: not-allowed;
