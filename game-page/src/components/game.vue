@@ -28,7 +28,7 @@
           </div>
         </div>
 
-        <div class="pot" aria-label="Pot">POT: 0</div>
+        <div class="pot" aria-label="Pot">POT: {{ pot }}</div>
 
         <!-- User ID setup modal -->
         <div v-if="showUserModal" class="modal-overlay">
@@ -90,11 +90,8 @@
             :style="`--angle: ${seat.angle}deg; --seat-distance: ${seat.distance}px`"
           >
             <span class="label">
-              <template v-if="index === 0">
-                {{ you.chips }}
-              </template>
-              <template v-else-if="hasPlayerInSeat(index)">
-                {{ getPlayerInSeat(index)?.chips }}
+              <template v-if="playersBySeat[index + 1]">
+                {{ playersBySeat[index + 1]?.chips }}
               </template>
               <template v-else> </template>
             </span>
@@ -103,45 +100,24 @@
 
         <!-- <div class="dealer-btn" title="Dealer">D</div> -->
 
-        <!-- Player hole cards in front of seat 1 -->
+        <!-- Hole cards for all seats (unified) -->
         <div
           class="hole-cards"
-          style="--angle: 0deg; --hole-distance: 280px"
-          aria-label="Seat 1 Hole Cards"
-        >
-          <div class="card-slot small">
-            <img
-              v-if="you.holeCards[0]"
-              :src="cardImageUrl(you.holeCards[0])"
-              :alt="you.holeCards[0]"
-            />
-          </div>
-          <div class="card-slot small">
-            <img
-              v-if="you.holeCards[1]"
-              :src="cardImageUrl(you.holeCards[1])"
-              :alt="you.holeCards[1]"
-            />
-          </div>
-        </div>
-        <!-- Other seats: show card backs only if player exists -->
-        <div
-          class="hole-cards"
-          v-for="(seat, index) in cardSlotsConfigs"
-          :key="`back-${index}`"
+          v-for="(seat, index) in holeSlotsConfigs"
+          :key="`hole-${index}`"
           :style="`--angle: ${seat.angle}deg; --hole-distance: ${seat.distance}px`"
-          aria-label="Other Seat Hole Cards"
+          aria-label="Seat Hole Cards"
         >
           <div class="card-slot small">
             <img
-              v-if="hasPlayerInSeat(index + 1)"
+              v-if="playersBySeat[index + 1]"
               src="https://deckofcardsapi.com/static/img/back.png"
               alt="Card back"
             />
           </div>
           <div class="card-slot small">
             <img
-              v-if="hasPlayerInSeat(index + 1)"
+              v-if="playersBySeat[index + 1]"
               src="https://deckofcardsapi.com/static/img/back.png"
               alt="Card back"
             />
@@ -154,17 +130,14 @@
 
 <script setup>
 import { onMounted, ref, computed } from "vue";
-import { getGame, createGame as createGameApi } from "../api/api.js";
+import {
+  getGame as getGameApi,
+  createGame as createGameApi,
+} from "../api/api.js";
 
-class Player {
-  constructor(id, chips, holeCards) {
-    this.id = id;
-    this.chips = typeof chips === "number" ? chips : 1000;
-    this.holeCards = holeCards;
-    this.currentBet = 0;
-  }
-}
 const communityCards = ref([]);
+const pot = ref(0);
+const playersBySeat = ref({});
 
 // Simple ID storage
 const userId = ref(null);
@@ -228,23 +201,37 @@ async function createGame() {
       gameId.value = response.gameId;
       saveGameId(response.gameId);
       console.log("Create game success:", response.gameId);
-      closeModal();
+
+      // Get initial game state
+      const gameStateLoaded = await loadGameState();
+      if (gameStateLoaded) {
+        closeModal();
+      } else {
+        console.error("Failed to load game state, keeping modal open");
+      }
     }
   } catch (err) {
     console.error("Create game error:", err);
   }
 }
 
-function joinGame() {
+async function joinGame() {
   const gameIdInput = prompt("Enter Game ID:");
   if (gameIdInput) {
     saveGameId(gameIdInput);
     gameId.value = gameIdInput;
-    closeModal();
+
+    // Load game state for joined game
+    const gameStateLoaded = await loadGameState();
+    if (gameStateLoaded) {
+      closeModal();
+    } else {
+      console.error("Failed to load game state, keeping modal open");
+    }
   }
 }
 
-// Seat configuration array - all seats with their angles and distances
+// all seats with their angles and distances
 const seatConfigs = ref([
   { angle: 0, distance: 200 },
   { angle: 55, distance: 300 },
@@ -257,8 +244,9 @@ const seatConfigs = ref([
   { angle: 305, distance: 300 },
 ]);
 
-// Other seats configuration for hole cards (excluding seat 1)
-const cardSlotsConfigs = ref([
+// Hole cards positions for all 9 seats
+const holeSlotsConfigs = ref([
+  { angle: 0, distance: 280 },
   { angle: 55, distance: 420 },
   { angle: 80, distance: 570 },
   { angle: 120, distance: 550 },
@@ -269,16 +257,8 @@ const cardSlotsConfigs = ref([
   { angle: 305, distance: 440 },
 ]);
 
-var you = new Player(1, 1000, []);
-
-var opponentsPlayers = ref({
-  2: {
-    player: new Player(2, 1000),
-  },
-  5: {
-    player: new Player(2, 1000),
-  },
-});
+// you is the player you are playing as
+var you = ref({});
 
 onMounted(() => {
   // 皇家同花顺（黑桃 10, J, Q, K, A）
@@ -320,16 +300,37 @@ async function copyGameId() {
   }
 }
 
-function hasPlayerInSeat(seatIndex) {
-  // seatIndex + 1 because seat numbers start from 1, but array index starts from 0
-  const seatNumber = seatIndex + 1;
-  return opponentsPlayers.value.hasOwnProperty(seatNumber);
-}
+async function loadGameState() {
+  try {
+    const response = await getGameApi(gameId.value);
+    if (response.ok) {
+      const gameState = response.state;
+      console.log("Game state loaded:", gameState);
 
-function getPlayerInSeat(seatIndex) {
-  // Get player in seat (seat numbers start from 1)
-  const seatNumber = seatIndex + 1;
-  return opponentsPlayers.value[seatNumber]?.player;
+      // Update community cards
+      communityCards.value = gameState.communityCards || [];
+
+      // Update pot
+      pot.value = gameState.pot ?? 0;
+
+      // Update players
+      playersBySeat.value = {};
+      for (const player of gameState.players || []) {
+        playersBySeat.value[player.seat] = player;
+        if (player.id === userId.value) {
+          you.value = player;
+        }
+      }
+
+      return true; // Success
+    } else {
+      console.error("Game state response not ok:", response);
+      return false; // Failure
+    }
+  } catch (err) {
+    console.error("Failed to load game state:", err);
+    return false; // Failure
+  }
 }
 
 const communitySlots = computed(() => {
@@ -430,7 +431,7 @@ body {
 /* Game ID */
 .game-id {
   position: absolute;
-  left: 50%;
+  left: 52%;
   top: 2%;
   transform: translate(-50%, -50%);
   padding: 4px 10px;
