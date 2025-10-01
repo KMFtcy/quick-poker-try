@@ -19,3 +19,11 @@ export async function createGame(userId) {
   });
   return response.json();
 }
+
+// bet
+export async function bet(gameId, userId, betAmount) {
+  const response = await fetch(`${API_BASE}/game/${gameId}/bet/${userId}/${betAmount}`, {
+    method: 'POST'
+  });
+  return response.json();
+}

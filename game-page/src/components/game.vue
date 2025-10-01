@@ -162,6 +162,7 @@ import {
   getGame as getGameApi,
   createGame as createGameApi,
   getUser as getUserApi,
+  bet as betApi,
 } from "../api/api.js";
 
 const communityCards = ref([]);
@@ -321,6 +322,7 @@ const holeSlotsConfigs = ref([
 
 // you is the player you are playing as
 var you = ref({});
+const betAmount = ref(0);
 
 onMounted(() => {
   // 皇家同花顺（黑桃 10, J, Q, K, A）
@@ -414,6 +416,42 @@ async function loadUserState() {
   } catch (err) {
     console.error("Failed to load user state:", err);
     return false;
+  }
+}
+
+async function placeBet() {
+  try {
+    const currentGameId = gameId.value;
+    const currentUserId = userId.value;
+    const amount = Number(betAmount.value);
+
+    if (!currentGameId || !currentUserId) {
+      console.error("Missing gameId or userId");
+      return;
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      console.error("Invalid bet amount");
+      return;
+    }
+
+    const maxChips = Number(you.value?.chips ?? 0);
+    if (amount > maxChips) {
+      console.error("Bet exceeds available chips");
+      return;
+    }
+
+    const response = await betApi(currentGameId, currentUserId, amount);
+    if (response?.ok) {
+      await loadGameState();
+      await loadUserState();
+      // keep the amount for convenience; comment out next line to persist
+      betAmount.value = 0;
+    } else {
+      console.error("Bet failed:", response);
+    }
+  } catch (err) {
+    console.error("Bet error:", err);
   }
 }
 
