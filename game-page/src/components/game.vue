@@ -82,6 +82,9 @@
             <button @click="call" class="action-button call-button">
               CALL
             </button>
+            <button @click="fold" class="action-button fold-button">
+              FOLD
+            </button>
           </div>
         </div>
 
@@ -168,6 +171,7 @@ import {
   getUser as getUserApi,
   bet as betApi,
   call as callApi,
+  fold as foldApi,
 } from "../api/api.js";
 
 const communityCards = ref([]);
@@ -483,6 +487,28 @@ async function call() {
     }
   } catch (err) {
     console.error("Call error:", err);
+  }
+}
+
+async function fold() {
+  try {
+    const currentGameId = gameId.value;
+    const currentUserId = userId.value;
+
+    if (!currentGameId || !currentUserId) {
+      console.error("Missing gameId or userId");
+      return;
+    }
+
+    const response = await foldApi(currentGameId, currentUserId);
+    if (response?.ok) {
+      await loadGameState();
+      await loadUserState();
+    } else {
+      console.error("Fold failed:", response);
+    }
+  } catch (err) {
+    console.error("Fold error:", err);
   }
 }
 
@@ -942,6 +968,24 @@ body {
 }
 
 .call-button:disabled {
+  background: #666;
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Fold button */
+.fold-button {
+  background: #e53935;
+  color: white;
+}
+
+.fold-button:hover:not(:disabled) {
+  background: #c62828;
+  transform: translateY(-1px);
+}
+
+.fold-button:disabled {
   background: #666;
   color: #999;
   cursor: not-allowed;

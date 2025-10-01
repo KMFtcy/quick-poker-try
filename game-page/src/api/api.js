@@ -35,3 +35,11 @@ export async function call(gameId, userId) {
   });
   return response.json();
 }
+
+//fold
+export async function fold(gameId, userId) {
+  const response = await fetch(`${API_BASE}/game/${gameId}/fold/${userId}`, {
+    method: 'POST'
+  });
+  return response.json();
+}
