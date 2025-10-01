@@ -20,6 +20,14 @@ export async function createGame(userId) {
   return response.json();
 }
 
+// join game
+export async function joinGame(gameId, userId) {
+  const response = await fetch(`${API_BASE}/game/join/${gameId}/${userId}`, {
+    method: 'POST'
+  });
+  return response.json();
+}
+
 // bet
 export async function bet(gameId, userId, betAmount) {
   const response = await fetch(`${API_BASE}/game/${gameId}/bet/${userId}/${betAmount}`, {

@@ -172,6 +172,7 @@ import {
   bet as betApi,
   call as callApi,
   fold as foldApi,
+  joinGame as joinGameApi,
 } from "../api/api.js";
 
 const communityCards = ref([]);
@@ -289,17 +290,27 @@ async function createGame() {
 async function joinGame() {
   const gameIdInput = prompt("Enter Game ID:");
   if (gameIdInput) {
-    saveGameId(gameIdInput);
-    gameId.value = gameIdInput;
+    try {
+      const response = await joinGameApi(gameIdInput, userId.value);
+      if (response.ok) {
+        gameId.value = response.gameId;
+        saveGameId(response.gameId);
+        console.log("Join game success:", response.gameId);
 
-    // Load game state for joined game
-    const gameStateLoaded = await loadGameState();
-    if (gameStateLoaded) {
-      await loadUserState();
-      closeModal();
-      startPollingGameState();
-    } else {
-      console.error("Failed to load game state, keeping modal open");
+        // Get initial game state
+        const gameStateLoaded = await loadGameState();
+        if (gameStateLoaded) {
+          await loadUserState();
+          closeModal();
+          startPollingGameState();
+        } else {
+          console.error("Failed to load game state, keeping modal open");
+        }
+      } else {
+        console.error("Failed to join game, keeping modal open");
+      }
+    } catch (err) {
+      console.error("Join game error:", err);
     }
   }
 }
