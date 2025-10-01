@@ -59,3 +59,11 @@ export async function check(gameId, userId) {
   });
   return response.json();
 }
+
+// settle (showdown -> next hand)
+export async function settle(gameId) {
+  const response = await fetch(`${API_BASE}/game/${gameId}/settle`, {
+    method: 'POST'
+  });
+  return response.json();
+}

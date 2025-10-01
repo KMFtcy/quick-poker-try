@@ -30,6 +30,18 @@
 
         <div class="pot" aria-label="Pot">POT: {{ pot }}</div>
 
+        <!-- Settle button during SHOWDOWN -->
+        <div v-if="showAllHoleCards" class="settle-overlay">
+          <button
+            @click="settleShowdown"
+            class="settle-button"
+            aria-label="Settle Hand"
+            title="Settle the hand and start the next hand."
+          >
+            Settle Hand
+          </button>
+        </div>
+
         <!-- User ID setup modal -->
         <div v-if="showUserModal" class="modal-overlay">
           <div class="modal" @click.stop>
@@ -132,6 +144,16 @@
             />
             <img
               v-else-if="
+                showAllHoleCards &&
+                playersBySeat[index + 1] &&
+                playersBySeat[index + 1].holeCards &&
+                playersBySeat[index + 1].holeCards.length >= 1
+              "
+              :src="cardImageUrl(playersBySeat[index + 1].holeCards[0])"
+              alt="Revealed first card"
+            />
+            <img
+              v-else-if="
                 playersBySeat[index + 1] &&
                 playersBySeat[index + 1].id !== you.id
               "
@@ -150,6 +172,16 @@
               "
               :src="cardImageUrl(you.holeCards[1])"
               alt="Your second card"
+            />
+            <img
+              v-else-if="
+                showAllHoleCards &&
+                playersBySeat[index + 1] &&
+                playersBySeat[index + 1].holeCards &&
+                playersBySeat[index + 1].holeCards.length >= 2
+              "
+              :src="cardImageUrl(playersBySeat[index + 1].holeCards[1])"
+              alt="Revealed second card"
             />
             <img
               v-else-if="
@@ -177,12 +209,14 @@ import {
   fold as foldApi,
   check as checkApi,
   joinGame as joinGameApi,
+  settle as settleApi,
 } from "../api/api.js";
 
 const communityCards = ref([]);
 const pot = ref(0);
 const playersBySeat = ref({});
 const actingSeat = ref(null);
+const phase = ref(null);
 
 // Simple ID storage
 const userId = ref(null);
@@ -348,6 +382,7 @@ const holeSlotsConfigs = ref([
 // you is the player you are playing as
 var you = ref({});
 const betAmount = ref(0);
+const showAllHoleCards = computed(() => phase.value === "SHOWDOWN");
 
 onMounted(() => {
   // 皇家同花顺（黑桃 10, J, Q, K, A）
@@ -418,6 +453,8 @@ async function loadGameState() {
 
       // Update acting seat
       actingSeat.value = gameState.actingSeat ?? null;
+      // Update phase
+      phase.value = gameState.phase ?? null;
 
       return true; // Success
     } else {
@@ -546,6 +583,22 @@ async function fold() {
     }
   } catch (err) {
     console.error("Fold error:", err);
+  }
+}
+
+async function settleShowdown() {
+  try {
+    const currentGameId = gameId.value;
+    if (!currentGameId) return;
+    const response = await settleApi(currentGameId);
+    if (response?.ok) {
+      await loadGameState();
+      await loadUserState();
+    } else {
+      console.error("Settle failed:", response);
+    }
+  } catch (err) {
+    console.error("Settle error:", err);
   }
 }
 
@@ -1045,6 +1098,32 @@ body {
   color: #999;
   cursor: not-allowed;
   transform: none;
+}
+
+/* Settle overlay/button */
+.settle-overlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+}
+
+.settle-button {
+  padding: 10px 20px;
+  background: #ffd84d;
+  color: #222;
+  border: none;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.settle-button:hover {
+  background: #ffed4e;
+  transform: translateY(-1px);
 }
 
 /* Small screens */
