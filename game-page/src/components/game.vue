@@ -1,5 +1,21 @@
 <template>
   <div id="app">
+    <div
+      v-if="gameId"
+      class="game-id"
+      aria-label="Game ID"
+      @click="copyGameId"
+      title="Click to copy Game ID"
+    >
+      Game ID: {{ gameId }}
+    </div>
+
+    <!-- Copy success toast -->
+    <transition name="toast">
+      <div v-if="showCopySuccess" class="copy-success-toast">
+        ✓ Game ID copied to clipboard!
+      </div>
+    </transition>
     <div class="table" aria-label="Texas Hold'em Table">
       <div class="felt">
         <div class="community" aria-label="Community Cards">
@@ -156,6 +172,7 @@ const gameId = ref(null);
 const showUserModal = ref(false);
 const showModeModal = ref(false);
 const tempUserId = ref("");
+const showCopySuccess = ref(false);
 
 // ID storage functions
 function saveUserId(id) {
@@ -280,6 +297,29 @@ function cardImageUrl(code) {
   return `https://deckofcardsapi.com/static/img/${code}.png`;
 }
 
+async function copyGameId() {
+  try {
+    await navigator.clipboard.writeText(gameId.value);
+    showCopySuccess.value = true;
+    setTimeout(() => {
+      showCopySuccess.value = false;
+    }, 1000);
+  } catch (err) {
+    console.error("Failed to copy Game ID:", err);
+    // fallback to traditional copy method
+    const textArea = document.createElement("textarea");
+    textArea.value = gameId.value;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
+    showCopySuccess.value = true;
+    setTimeout(() => {
+      showCopySuccess.value = false;
+    }, 2000);
+  }
+}
+
 function hasPlayerInSeat(seatIndex) {
   // seatIndex + 1 because seat numbers start from 1, but array index starts from 0
   const seatNumber = seatIndex + 1;
@@ -385,6 +425,65 @@ body {
   height: 100%;
   object-fit: contain;
   display: block;
+}
+
+/* Game ID */
+.game-id {
+  position: absolute;
+  left: 50%;
+  top: 2%;
+  transform: translate(-50%, -50%);
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: #e4e4e4;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  z-index: 10;
+}
+
+.game-id:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+/* Copy success toast */
+.copy-success-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #4caf50;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+/* Toast transition animations */
+.toast-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.toast-leave-active {
+  transition: all 0.3s ease-in;
+}
+
+.toast-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px);
+}
+
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px);
 }
 
 /* Pot */
