@@ -14,6 +14,22 @@
 
         <div class="pot" aria-label="Pot">POT: 0</div>
 
+        <!-- Game mode selection modal -->
+        <div v-if="showModeModal" class="modal-overlay">
+          <div class="modal" @click.stop>
+            <h2>Welcome to Texas Hold'em!</h2>
+            <p class="welcome-text">Choose how you'd like to start playing</p>
+            <div class="modal-buttons">
+              <button @click="createGame" class="modal-btn create-btn">
+                Create New Game
+              </button>
+              <button @click="joinGame" class="modal-btn join-btn">
+                Join Existing Game
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Betting area -->
         <div class="betting-area" aria-label="Betting Controls">
           <div class="bet-input-group">
@@ -106,6 +122,63 @@ class Player {
 }
 const communityCards = ref([]);
 
+// Simple ID storage
+const userId = ref(null);
+const gameId = ref(null);
+const showModeModal = ref(false);
+
+// ID storage functions
+function saveUserId(id) {
+  localStorage.setItem("pokerUserId", id);
+  userId.value = id;
+}
+
+function saveGameId(id) {
+  localStorage.setItem("pokerGameId", id);
+  gameId.value = id;
+}
+
+function loadUserId() {
+  return localStorage.getItem("pokerUserId");
+}
+
+function loadGameId() {
+  return localStorage.getItem("pokerGameId");
+}
+
+function createUserId() {
+  var id = "chaoyang";
+  saveUserId(id);
+  return id;
+}
+
+function createGameId() {
+  var id = "1234567890";
+  saveGameId(id);
+  return id;
+}
+
+// Modal functions
+function closeModal() {
+  showModeModal.value = false;
+}
+
+function createGame() {
+  // 创建新牌局的逻辑
+  gameId.value = createGameId();
+  closeModal();
+}
+
+function joinGame() {
+  // Join game logic
+  const gameIdInput = prompt("Enter Game ID:");
+  if (gameIdInput) {
+    saveGameId(gameIdInput);
+    gameId.value = gameIdInput;
+    closeModal();
+  }
+}
+
 // Seat configuration array - all seats with their angles and distances
 const seatConfigs = ref([
   { angle: 0, distance: 200 },
@@ -146,6 +219,12 @@ onMounted(() => {
   // 皇家同花顺（黑桃 10, J, Q, K, A）
   const royalSpades = ["0S", "JS", "QS", "KS", "AS"];
   communityCards.value = royalSpades;
+
+  // Load user id
+  userId.value = loadUserId() || createUserId();
+
+  // Check if we have a saved game id
+  showModeModal.value = true;
 });
 
 function cardImageUrl(code) {
@@ -270,6 +349,80 @@ body {
   border-radius: 999px;
   font-weight: 600;
   letter-spacing: 0.5px;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--felt-gradient);
+  border: 3px solid var(--table-rail);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  min-width: 300px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.modal h2 {
+  margin: 0 0 12px 0;
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.welcome-text {
+  margin: 0 0 24px 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.modal-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.create-btn {
+  background: var(--dealer);
+  color: #222;
+}
+
+.create-btn:hover {
+  background: #ffed4e;
+  transform: translateY(-2px);
+}
+
+.join-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.join-btn:hover {
+  background: #45a049;
+  transform: translateY(-2px);
 }
 
 /* Dealer button */
