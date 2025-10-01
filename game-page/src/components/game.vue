@@ -129,7 +129,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, onUnmounted, ref, computed } from "vue";
 import {
   getGame as getGameApi,
   createGame as createGameApi,
@@ -146,6 +146,10 @@ const showUserModal = ref(false);
 const showModeModal = ref(false);
 const tempUserId = ref("");
 const showCopySuccess = ref(false);
+
+// Polling state management
+const pollingInterval = ref(null);
+const isPolling = ref(false);
 
 // ID storage functions
 function saveUserId(id) {
@@ -178,6 +182,30 @@ function createGameId() {
   return id;
 }
 
+// Polling functions
+function startPollingGameState() {
+  if (isPolling.value || !gameId.value) return;
+
+  isPolling.value = true;
+  pollingInterval.value = setInterval(async () => {
+    await loadGameState();
+  }, 1000);
+
+  console.log("Started polling game state");
+}
+
+function stopPollingGameState() {
+  if (!isPolling.value) return;
+
+  if (pollingInterval.value) {
+    clearInterval(pollingInterval.value);
+    pollingInterval.value = null;
+  }
+  isPolling.value = false;
+
+  console.log("Stopped polling game state");
+}
+
 // Modal functions
 function closeModal() {
   showUserModal.value = false;
@@ -206,6 +234,7 @@ async function createGame() {
       const gameStateLoaded = await loadGameState();
       if (gameStateLoaded) {
         closeModal();
+        startPollingGameState();
       } else {
         console.error("Failed to load game state, keeping modal open");
       }
@@ -225,6 +254,7 @@ async function joinGame() {
     const gameStateLoaded = await loadGameState();
     if (gameStateLoaded) {
       closeModal();
+      startPollingGameState();
     } else {
       console.error("Failed to load game state, keeping modal open");
     }
@@ -271,6 +301,10 @@ onMounted(() => {
     tempUserId.value = savedUserId;
   }
   showUserModal.value = true;
+});
+
+onUnmounted(() => {
+  stopPollingGameState();
 });
 
 function cardImageUrl(code) {
