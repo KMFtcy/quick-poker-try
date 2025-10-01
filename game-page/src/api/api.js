@@ -27,3 +27,11 @@ export async function bet(gameId, userId, betAmount) {
   });
   return response.json();
 }
+
+//call
+export async function call(gameId, userId) {
+  const response = await fetch(`${API_BASE}/game/${gameId}/call/${userId}`, {
+    method: 'POST'
+  });
+  return response.json();
+}

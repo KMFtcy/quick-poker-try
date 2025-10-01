@@ -79,6 +79,9 @@
               @keyup.enter="placeBet"
             />
             <button @click="placeBet" class="bet-button">BET</button>
+            <button @click="call" class="action-button call-button">
+              CALL
+            </button>
           </div>
         </div>
 
@@ -164,6 +167,7 @@ import {
   createGame as createGameApi,
   getUser as getUserApi,
   bet as betApi,
+  call as callApi,
 } from "../api/api.js";
 
 const communityCards = ref([]);
@@ -457,6 +461,28 @@ async function placeBet() {
     }
   } catch (err) {
     console.error("Bet error:", err);
+  }
+}
+
+async function call() {
+  try {
+    const currentGameId = gameId.value;
+    const currentUserId = userId.value;
+
+    if (!currentGameId || !currentUserId) {
+      console.error("Missing gameId or userId");
+      return;
+    }
+
+    const response = await callApi(currentGameId, currentUserId);
+    if (response?.ok) {
+      await loadGameState();
+      await loadUserState();
+    } else {
+      console.error("Call failed:", response);
+    }
+  } catch (err) {
+    console.error("Call error:", err);
   }
 }
 
@@ -895,6 +921,33 @@ body {
   border-radius: 4px;
 }
 
+.action-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.call-button {
+  background: #2196f3;
+  color: white;
+}
+
+.call-button:hover:not(:disabled) {
+  background: #1976d2;
+  transform: translateY(-1px);
+}
+
+.call-button:disabled {
+  background: #666;
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Small screens */
 @media (max-width: 520px) {
   :root {
@@ -917,6 +970,11 @@ body {
   .bet-info {
     font-size: 11px;
     gap: 8px;
+  }
+
+  .action-button {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
 </style>
