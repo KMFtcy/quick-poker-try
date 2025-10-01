@@ -14,11 +14,31 @@
 
         <div class="pot" aria-label="Pot">POT: 0</div>
 
+        <!-- User ID setup modal -->
+        <div v-if="showUserModal" class="modal-overlay">
+          <div class="modal" @click.stop>
+            <h2>Welcome to Texas Hold'em!</h2>
+            <p class="welcome-text">Please enter your user ID to continue</p>
+            <div class="user-input-group">
+              <input
+                v-model="tempUserId"
+                type="text"
+                placeholder="Enter your user ID"
+                class="user-input"
+                @keyup.enter="setUserId"
+              />
+              <button @click="setUserId" class="modal-btn create-btn">
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Game mode selection modal -->
         <div v-if="showModeModal" class="modal-overlay">
           <div class="modal" @click.stop>
-            <h2>Welcome to Texas Hold'em!</h2>
-            <p class="welcome-text">Choose how you'd like to start playing</p>
+            <h2>Choose Game Mode</h2>
+            <p class="welcome-text">How would you like to start playing?</p>
             <div class="modal-buttons">
               <button @click="createGame" class="modal-btn create-btn">
                 Create New Game
@@ -125,7 +145,9 @@ const communityCards = ref([]);
 // Simple ID storage
 const userId = ref(null);
 const gameId = ref(null);
+const showUserModal = ref(false);
 const showModeModal = ref(false);
+const tempUserId = ref("");
 
 // ID storage functions
 function saveUserId(id) {
@@ -160,17 +182,21 @@ function createGameId() {
 
 // Modal functions
 function closeModal() {
+  showUserModal.value = false;
   showModeModal.value = false;
 }
 
-function createGame() {
-  // 创建新牌局的逻辑
-  gameId.value = createGameId();
-  closeModal();
+function setUserId() {
+  if (tempUserId.value.trim()) {
+    saveUserId(tempUserId.value.trim());
+    showUserModal.value = false;
+
+    // show game mode selection modal
+    showModeModal.value = true;
+  }
 }
 
 function joinGame() {
-  // Join game logic
   const gameIdInput = prompt("Enter Game ID:");
   if (gameIdInput) {
     saveGameId(gameIdInput);
@@ -220,11 +246,12 @@ onMounted(() => {
   const royalSpades = ["0S", "JS", "QS", "KS", "AS"];
   communityCards.value = royalSpades;
 
-  // Load user id
-  userId.value = loadUserId() || createUserId();
-
-  // Check if we have a saved game id
-  showModeModal.value = true;
+  // Always show user ID setup first
+  const savedUserId = loadUserId();
+  if (savedUserId) {
+    tempUserId.value = savedUserId;
+  }
+  showUserModal.value = true;
 });
 
 function cardImageUrl(code) {
@@ -386,6 +413,35 @@ body {
   margin: 0 0 24px 0;
   color: var(--muted);
   font-size: 16px;
+}
+
+.user-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.user-input {
+  width: 100%;
+  max-width: 280px;
+  padding: 12px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text);
+  font-size: 16px;
+  text-align: center;
+}
+
+.user-input:focus {
+  outline: none;
+  border-color: var(--dealer);
+  box-shadow: 0 0 0 2px rgba(255, 216, 77, 0.3);
+}
+
+.user-input::placeholder {
+  color: var(--muted);
 }
 
 .modal-buttons {
