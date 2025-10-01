@@ -149,6 +149,8 @@ function startHand(game) {
     if (bbSeat) postBlind(game, bbSeat, game.bigBlind);
     game.minRaise = game.bigBlind;
     game.actingSeat = nextActiveSeat(game, bbSeat ?? game.buttonSeat);
+    // First betting round starts after big blind. Track start seat for round-end detection.
+    game.actionStartSeat = game.actingSeat;
     game.lastAggressorSeat = bbSeat ?? null;
 }
 
@@ -192,7 +194,9 @@ function advancePhase(game) {
     }
     // Set action to first active left of button
     game.actingSeat = nextActiveSeat(game, game.buttonSeat ?? 1);
+    // New street: no aggressor yet; round starts from this acting seat
     game.lastAggressorSeat = null;
+    game.actionStartSeat = game.actingSeat;
 }
 
 function ensureTurn(game, userId) {
@@ -209,7 +213,8 @@ function bet(gameId, userId, betAmount) {
     if (!game) throw new Error('GAME_NOT_FOUND');
     if ([GamePhase.WAITING, GamePhase.SHOWDOWN].includes(game.phase)) throw new Error('BET_NOT_ALLOWED');
     const { seat, player } = ensureTurn(game, userId);
-    const toCall = currentMaxBet(game) - player.currentBet;
+    const prevMax = currentMaxBet(game);
+    const toCall = prevMax - player.currentBet;
     const raise = Math.max(0, betAmount - toCall);
     console.log('betAmount: ' + betAmount + ' toCall: ' + toCall + ' raise: ' + raise + ' minRaise: ' + game.minRaise);
     if (raise > 0 && raise < game.minRaise && betAmount < player.chips + toCall) throw new Error('MIN_RAISE_VIOLATION');
@@ -217,8 +222,9 @@ function bet(gameId, userId, betAmount) {
     player.chips -= commit;
     player.currentBet += commit;
     game.pot += commit;
-    if (player.currentBet > currentMaxBet(game)) {
-        game.minRaise = Math.max(game.minRaise, player.currentBet - (currentMaxBet(game) - commit));
+    if (player.currentBet > prevMax) {
+        const raiseSize = player.currentBet - prevMax;
+        game.minRaise = Math.max(game.minRaise, raiseSize);
         game.lastAggressorSeat = seat;
     }
     passAction(game);
@@ -274,11 +280,17 @@ function passAction(game, justFoldedSeat = null) {
     game.actingSeat = nextSeat;
     // Check if betting round ends
     if (allBetsAlignedOrAllIn(game)) {
-        if (game.phase === GamePhase.RIVER) {
-            game.phase = GamePhase.SHOWDOWN;
-            settle(game);
-        } else {
-            advancePhase(game);
+        // End the betting round only if action has returned appropriately
+        const everyoneAllIn = activePlayers.every(p => p.chips === 0);
+        const endSeat = game.lastAggressorSeat ?? game.actionStartSeat;
+        const roundShouldEnd = everyoneAllIn || (endSeat != null && game.actingSeat === endSeat);
+        if (roundShouldEnd) {
+            if (game.phase === GamePhase.RIVER) {
+                game.phase = GamePhase.SHOWDOWN;
+                settle(game);
+            } else {
+                advancePhase(game);
+            }
         }
     }
 }
@@ -327,7 +339,9 @@ function publicState(game) {
         phase: game.phase,
         actingPlayerId: game.actingSeat != null ? getPlayerAtSeat(game, game.actingSeat)?.id ?? null : null,
         actingSeat: game.actingSeat,
-        buttonSeat: game.buttonSeat
+        buttonSeat: game.buttonSeat,
+        currentMaxBet: currentMaxBet(game),
+        minRaise: game.minRaise,
     };
 }
 
