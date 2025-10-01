@@ -75,4 +75,13 @@ router.post('/:gameId/fold/:userId', function(req, res, next) {
     }
 });
 
+router.post('/:gameId/settle', function(req, res, next) {
+    try {
+        var game = gameModel.settleShowdown(req.params.gameId);
+        res.json({ ok: true, state: gameModel.publicState(game) });
+    } catch (e) {
+        res.status(400).json({ ok: false, error: String(e.message || e) });
+    }
+});
+
 module.exports = router;

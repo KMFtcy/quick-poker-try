@@ -188,8 +188,10 @@ function advancePhase(game) {
         game.communityCards.push(game.deck.pop());
         game.phase = GamePhase.RIVER;
     } else if (game.phase === GamePhase.RIVER) {
+        // Enter SHOWDOWN, Frontend will trigger settle explicitly.
         game.phase = GamePhase.SHOWDOWN;
-        settle(game);
+        // No one acts during showdown
+        game.actingSeat = null;
         return;
     }
     // Set action to first active left of button
@@ -268,11 +270,9 @@ function passAction(game, justFoldedSeat = null) {
     // If only one active player remains, award pot and start next hand
     const activePlayers = activeSeats(game).map(s => getPlayerAtSeat(game, s));
     if (activePlayers.length === 1) {
-        activePlayers[0].chips += game.pot;
-        game.pot = 0;
+        // Only one active player remains -> move to SHOWDOWN and wait for explicit settle
         game.phase = GamePhase.SHOWDOWN;
-        rotateButton(game);
-        startHand(game);
+        game.actingSeat = null;
         return;
     }
     // Action rotation
@@ -286,8 +286,9 @@ function passAction(game, justFoldedSeat = null) {
         const roundShouldEnd = everyoneAllIn || (endSeat != null && game.actingSeat === endSeat);
         if (roundShouldEnd) {
             if (game.phase === GamePhase.RIVER) {
+                // Move to SHOWDOWN without settling automatically
                 game.phase = GamePhase.SHOWDOWN;
-                settle(game);
+                game.actingSeat = null;
             } else {
                 advancePhase(game);
             }
@@ -332,7 +333,14 @@ function publicState(game) {
         id: game.id,
         players: occupiedSeats(game).map(seat => {
             const p = getPlayerAtSeat(game, seat);
-            return { id: p.id, chips: p.chips, status: p.status, seat };
+            return {
+                id: p.id,
+                chips: p.chips,
+                status: p.status,
+                seat,
+                // Expose all players' holeCards only during SHOWDOWN
+                holeCards: game.phase === GamePhase.SHOWDOWN ? p.holeCards : null,
+            };
         }),
         pot: game.pot,
         communityCards: game.communityCards,
@@ -343,6 +351,15 @@ function publicState(game) {
         currentMaxBet: currentMaxBet(game),
         minRaise: game.minRaise,
     };
+}
+
+function settleShowdown(gameId) {
+    const game = getGame(gameId);
+    if (!game) throw new Error('GAME_NOT_FOUND');
+    if (game.phase !== GamePhase.SHOWDOWN) throw new Error('SETTLE_NOT_ALLOWED');
+    // Perform settlement and start next hand
+    settle(game);
+    return game;
 }
 
 module.exports = {
@@ -356,6 +373,7 @@ module.exports = {
     call,
     check,
     fold,
-    publicState
+    publicState,
+    settleShowdown
 };
 
