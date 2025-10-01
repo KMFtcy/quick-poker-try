@@ -57,6 +57,15 @@ router.post('/:gameId/call/:userId', function(req, res, next) {
     }
 });
 
+router.post('/:gameId/check/:userId', function(req, res, next) {
+    try {
+        var game = gameModel.check(req.params.gameId, req.params.userId);
+        res.json({ ok: true, state: gameModel.publicState(game) });
+    } catch (e) {
+        res.status(400).json({ ok: false, error: String(e.message || e) });
+    }
+});
+
 router.post('/:gameId/fold/:userId', function(req, res, next) {
     try {
         var game = gameModel.fold(req.params.gameId, req.params.userId);
