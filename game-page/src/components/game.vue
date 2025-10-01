@@ -15,32 +15,13 @@
         <div class="pot" aria-label="Pot">POT: 0</div>
 
         <div class="seat-ring" aria-label="Seats">
-          <div class="seat" style="--angle: 0deg; --seat-distance: 200px">
-            <span class="label">1</span>
-          </div>
-          <div class="seat" style="--angle: 55deg; --seat-distance: 300px">
-            <span class="label">2</span>
-          </div>
-          <div class="seat" style="--angle: 80deg; --seat-distance: 400px">
-            <span class="label">3</span>
-          </div>
-          <div class="seat" style="--angle: 110deg; --seat-distance: 370px">
-            <span class="label">4</span>
-          </div>
-          <div class="seat" style="--angle: 140deg; --seat-distance: 230px">
-            <span class="label">5</span>
-          </div>
-          <div class="seat" style="--angle: 220deg; --seat-distance: 230px">
-            <span class="label">6</span>
-          </div>
-          <div class="seat" style="--angle: 250deg; --seat-distance: 370px">
-            <span class="label">7</span>
-          </div>
-          <div class="seat" style="--angle: 280deg; --seat-distance: 400px">
-            <span class="label">8</span>
-          </div>
-          <div class="seat" style="--angle: 305deg; --seat-distance: 300px">
-            <span class="label">9</span>
+          <div
+            class="seat"
+            v-for="(seat, index) in seatConfigs"
+            :key="index"
+            :style="`--angle: ${seat.angle}deg; --seat-distance: ${seat.distance}px`"
+          >
+            <span class="label">{{ index + 1 }}</span>
           </div>
         </div>
 
@@ -60,22 +41,24 @@
             <img v-if="card" :src="cardImageUrl(card)" :alt="card" />
           </div>
         </div>
-        <!-- Other seats: show card backs -->
+        <!-- Other seats: show card backs only if player exists -->
         <div
           class="hole-cards"
-          v-for="(angle, i) in otherSeatsAngles"
-          :key="`back-` + i"
-          :style="`--angle: ${angle}deg; --hole-distance: ${otherSeatsDistances[i]}px`"
+          v-for="(seat, index) in cardSlotsConfigs"
+          :key="`back-${index}`"
+          :style="`--angle: ${seat.angle}deg; --hole-distance: ${seat.distance}px`"
           aria-label="Other Seat Hole Cards"
         >
           <div class="card-slot small">
             <img
+              v-if="hasPlayerInSeat(index)"
               src="https://deckofcardsapi.com/static/img/back.png"
               alt="Card back"
             />
           </div>
           <div class="card-slot small">
             <img
+              v-if="hasPlayerInSeat(index)"
               src="https://deckofcardsapi.com/static/img/back.png"
               alt="Card back"
             />
@@ -89,10 +72,47 @@
 <script setup>
 import { onMounted, ref, computed } from "vue";
 
+class Player {
+  constructor(id, chips) {
+    this.id = id;
+    this.chips = typeof chips === "number" ? chips : 1000;
+    this.holeCards = [];
+    this.currentBet = 0;
+  }
+}
 const communityCards = ref([]);
 const player1Cards = ref([]);
-const otherSeatsAngles = ref([55, 80, 120, 150, 210, 240, 280, 305]);
-const otherSeatsDistances = ref([420, 570, 550, 420, 420, 520, 560, 440]);
+
+// Seat configuration array - all seats with their angles and distances
+const seatConfigs = ref([
+  { angle: 0, distance: 200 },
+  { angle: 55, distance: 300 },
+  { angle: 80, distance: 400 },
+  { angle: 110, distance: 370 },
+  { angle: 140, distance: 230 },
+  { angle: 220, distance: 230 },
+  { angle: 250, distance: 370 },
+  { angle: 280, distance: 400 },
+  { angle: 305, distance: 300 },
+]);
+
+// Other seats configuration for hole cards (excluding seat 1)
+const cardSlotsConfigs = ref([
+  { angle: 55, distance: 420 },
+  { angle: 80, distance: 570 },
+  { angle: 120, distance: 550 },
+  { angle: 150, distance: 420 },
+  { angle: 210, distance: 420 },
+  { angle: 240, distance: 520 },
+  { angle: 280, distance: 560 },
+  { angle: 305, distance: 440 },
+]);
+
+var opponentsPlayers = ref({
+  2: {
+    player: new Player(2, 1000),
+  },
+});
 
 onMounted(() => {
   // 皇家同花顺（黑桃 10, J, Q, K, A）
@@ -104,6 +124,11 @@ onMounted(() => {
 
 function cardImageUrl(code) {
   return `https://deckofcardsapi.com/static/img/${code}.png`;
+}
+
+function hasPlayerInSeat(seatIndex) {
+  // seatIndex + 2 because seat 1 is handled separately, seats start from 2
+  return opponentsPlayers.value.hasOwnProperty(seatIndex + 2);
 }
 
 const communitySlots = computed(() => {
@@ -136,7 +161,7 @@ const player1Slots = computed(() => {
   --table-rail: #6b3e2e;
   --table-rail-shadow: rgba(0, 0, 0, 0.35);
   --seat-distance: 200px;
-  --seat-size: 40px;
+  --seat-size: 55px;
   --seat-bg: #1e1e1e;
   --seat-ring: #a0a0a0;
   --text: #e9f7ec;
