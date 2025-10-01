@@ -100,7 +100,7 @@
 
         <!-- <div class="dealer-btn" title="Dealer">D</div> -->
 
-        <!-- Hole cards for all seats (unified) -->
+        <!-- Hole cards for all seats -->
         <div
           class="hole-cards"
           v-for="(seat, index) in holeSlotsConfigs"
@@ -109,15 +109,43 @@
           aria-label="Seat Hole Cards"
         >
           <div class="card-slot small">
+            <!-- First card: show user's real card if this is 'you' and has cards; else back for others; else empty -->
             <img
-              v-if="playersBySeat[index + 1]"
+              v-if="
+                playersBySeat[index + 1] &&
+                playersBySeat[index + 1].id === you.id &&
+                you.holeCards &&
+                you.holeCards.length >= 1
+              "
+              :src="cardImageUrl(you.holeCards[0])"
+              alt="Your first card"
+            />
+            <img
+              v-else-if="
+                playersBySeat[index + 1] &&
+                playersBySeat[index + 1].id !== you.id
+              "
               src="https://deckofcardsapi.com/static/img/back.png"
               alt="Card back"
             />
           </div>
           <div class="card-slot small">
+            <!-- Second card: show user's real card if this is 'you' and has cards; else back for others; else empty -->
             <img
-              v-if="playersBySeat[index + 1]"
+              v-if="
+                playersBySeat[index + 1] &&
+                playersBySeat[index + 1].id === you.id &&
+                you.holeCards &&
+                you.holeCards.length >= 2
+              "
+              :src="cardImageUrl(you.holeCards[1])"
+              alt="Your second card"
+            />
+            <img
+              v-else-if="
+                playersBySeat[index + 1] &&
+                playersBySeat[index + 1].id !== you.id
+              "
               src="https://deckofcardsapi.com/static/img/back.png"
               alt="Card back"
             />
@@ -133,6 +161,7 @@ import { onMounted, onUnmounted, ref, computed } from "vue";
 import {
   getGame as getGameApi,
   createGame as createGameApi,
+  getUser as getUserApi,
 } from "../api/api.js";
 
 const communityCards = ref([]);
@@ -189,6 +218,7 @@ function startPollingGameState() {
   isPolling.value = true;
   pollingInterval.value = setInterval(async () => {
     await loadGameState();
+    await loadUserState();
   }, 1000);
 
   console.log("Started polling game state");
@@ -233,6 +263,7 @@ async function createGame() {
       // Get initial game state
       const gameStateLoaded = await loadGameState();
       if (gameStateLoaded) {
+        await loadUserState();
         closeModal();
         startPollingGameState();
       } else {
@@ -253,6 +284,7 @@ async function joinGame() {
     // Load game state for joined game
     const gameStateLoaded = await loadGameState();
     if (gameStateLoaded) {
+      await loadUserState();
       closeModal();
       startPollingGameState();
     } else {
@@ -352,7 +384,8 @@ async function loadGameState() {
       for (const player of gameState.players || []) {
         playersBySeat.value[player.seat] = player;
         if (player.id === userId.value) {
-          you.value = player;
+          // Merge to avoid dropping user-only fields like holeCards
+          you.value = { ...you.value, ...player };
         }
       }
 
@@ -364,6 +397,23 @@ async function loadGameState() {
   } catch (err) {
     console.error("Failed to load game state:", err);
     return false; // Failure
+  }
+}
+
+async function loadUserState() {
+  try {
+    if (!gameId.value || !userId.value) return false;
+    const response = await getUserApi(gameId.value, userId.value);
+    if (response.ok) {
+      you.value = response.state;
+      return true;
+    } else {
+      console.error("User state response not ok:", response);
+      return false;
+    }
+  } catch (err) {
+    console.error("Failed to load user state:", err);
+    return false;
   }
 }
 

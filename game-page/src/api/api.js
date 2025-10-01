@@ -6,6 +6,12 @@ export async function getGame(gameId) {
   return response.json();
 }
 
+// get user state
+export async function getUser(gameId, userId) {
+  const response = await fetch(`${API_BASE}/game/${gameId}/${userId}`);
+  return response.json();
+}
+
 // create game
 export async function createGame(userId) {
   const response = await fetch(`${API_BASE}/game/create/${userId}`, {
