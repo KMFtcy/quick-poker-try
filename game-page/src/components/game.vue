@@ -93,12 +93,19 @@
           style="--angle: 0deg; --hole-distance: 280px"
           aria-label="Seat 1 Hole Cards"
         >
-          <div
-            class="card-slot small"
-            v-for="(card, idx) in you.holeCards"
-            :key="idx"
-          >
-            <img v-if="card" :src="cardImageUrl(card)" :alt="card" />
+          <div class="card-slot small">
+            <img
+              v-if="you.holeCards[0]"
+              :src="cardImageUrl(you.holeCards[0])"
+              :alt="you.holeCards[0]"
+            />
+          </div>
+          <div class="card-slot small">
+            <img
+              v-if="you.holeCards[1]"
+              :src="cardImageUrl(you.holeCards[1])"
+              :alt="you.holeCards[1]"
+            />
           </div>
         </div>
         <!-- Other seats: show card backs only if player exists -->
@@ -131,6 +138,7 @@
 
 <script setup>
 import { onMounted, ref, computed } from "vue";
+import { getGame, createGame as createGameApi } from "../api/api.js";
 
 class Player {
   constructor(id, chips, holeCards) {
@@ -196,6 +204,20 @@ function setUserId() {
   }
 }
 
+async function createGame() {
+  try {
+    const response = await createGameApi(userId.value);
+    if (response.ok) {
+      gameId.value = response.gameId;
+      saveGameId(response.gameId);
+      console.log("Create game success:", response.gameId);
+      closeModal();
+    }
+  } catch (err) {
+    console.error("Create game error:", err);
+  }
+}
+
 function joinGame() {
   const gameIdInput = prompt("Enter Game ID:");
   if (gameIdInput) {
@@ -230,7 +252,7 @@ const cardSlotsConfigs = ref([
   { angle: 305, distance: 440 },
 ]);
 
-var you = new Player(1, 1000, ["5S", "6S"]);
+var you = new Player(1, 1000, []);
 
 var opponentsPlayers = ref({
   2: {
